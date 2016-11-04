@@ -20,6 +20,7 @@ import org.osmdroid.api.IMapView;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
+import org.osmdroid.icon.IconProviderBase;
 import org.osmdroid.tileprovider.MapTileProviderArray;
 import org.osmdroid.tileprovider.MapTileProviderBase;
 import org.osmdroid.tileprovider.MapTileProviderBasic;
@@ -31,6 +32,7 @@ import org.osmdroid.tileprovider.util.SimpleInvalidationHandler;
 import org.osmdroid.util.BoundingBoxE6;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.util.GeometryMath;
+import org.osmdroid.util.Snapshot;
 import org.osmdroid.views.overlay.DefaultOverlayManager;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayManager;
@@ -38,6 +40,7 @@ import org.osmdroid.views.overlay.TilesOverlay;
 import org.osmdroid.views.util.constants.MapViewConstants;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -311,6 +314,10 @@ public class MapView extends ViewGroup implements IMapView, MapViewConstants,
 		this.checkZoomButtons();
 		this.setZoomLevel(mZoomLevel); // revalidate zoom level
 		postInvalidate();
+	}
+	
+	public void setIconProvider(final IconProviderBase anIconProvider) {
+		mTileProvider.setIconProvider(anIconProvider);
 	}
 
 	/**
@@ -1423,6 +1430,14 @@ public class MapView extends ViewGroup implements IMapView, MapViewConstants,
 		
 		mOverlayManager.setTilesOverlay(mMapOverlay);
 		invalidate();
+	}
+
+	public Snapshot getSnapshot(GeoPoint center, int widthPx, int heightPx, int zoomLevel) {
+		return new Snapshot(mTileProvider, center, widthPx, heightPx, zoomLevel, false, null);
+	}
+
+	public Snapshot getSnapshot(GeoPoint center, int widthPx, int heightPx, int zoomLevel, boolean gray, Bitmap marker) {
+		return new Snapshot(mTileProvider, center, widthPx, heightPx, zoomLevel, gray, marker);
 	}
 
 }

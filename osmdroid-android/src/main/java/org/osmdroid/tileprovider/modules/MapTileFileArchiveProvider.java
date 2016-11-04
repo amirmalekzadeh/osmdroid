@@ -37,12 +37,12 @@ public class MapTileFileArchiveProvider extends MapTileFileStorageProviderBase {
 	// Fields
 	// ===========================================================
 
-	private final ArrayList<IArchiveFile> mArchiveFiles = new ArrayList<IArchiveFile>();
+	protected final ArrayList<IArchiveFile> mArchiveFiles = new ArrayList<IArchiveFile>();
 
-	private final AtomicReference<ITileSource> mTileSource = new AtomicReference<ITileSource>();
+	protected final AtomicReference<ITileSource> mTileSource = new AtomicReference<ITileSource>();
 
 	/** Disable the search of archives if specified in constructor */
-	private final boolean mSpecificArchivesProvided;
+	protected final boolean mSpecificArchivesProvided;
 
 	// ===========================================================
 	// Constructors
@@ -151,7 +151,7 @@ public class MapTileFileArchiveProvider extends MapTileFileStorageProviderBase {
 	// Methods
 	// ===========================================================
 
-	private void findArchiveFiles() {
+	protected void findArchiveFiles() {
 
 		mArchiveFiles.clear();
 
@@ -172,7 +172,7 @@ public class MapTileFileArchiveProvider extends MapTileFileStorageProviderBase {
           }
 	}
 
-	private synchronized InputStream getInputStream(final MapTile pTile,
+	protected synchronized InputStream getInputStream(final MapTile pTile,
 			final ITileSource tileSource) {
 		for (final IArchiveFile archiveFile : mArchiveFiles) {
 			if (archiveFile!=null) {

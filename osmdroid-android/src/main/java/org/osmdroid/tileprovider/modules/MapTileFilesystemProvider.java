@@ -40,9 +40,9 @@ public class MapTileFilesystemProvider extends MapTileFileStorageProviderBase {
 	// Fields
 	// ===========================================================
 
-	private final long mMaximumCachedFileAge;
+	protected final long mMaximumCachedFileAge;
 	private DatabaseFileArchive databaseFileArchive;
-	private final AtomicReference<ITileSource> mTileSource = new AtomicReference<ITileSource>();
+	protected final AtomicReference<ITileSource> mTileSource = new AtomicReference<ITileSource>();
 
 	// ===========================================================
 	// Constructors

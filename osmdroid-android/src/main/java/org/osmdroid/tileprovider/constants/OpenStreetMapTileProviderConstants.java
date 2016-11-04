@@ -114,7 +114,9 @@ public class OpenStreetMapTileProviderConstants {
 	public static final long ONE_DAY = ONE_HOUR * 24;
 	public static final long ONE_WEEK = ONE_DAY * 7;
 	public static final long ONE_YEAR = ONE_DAY * 365;
-	public static final long DEFAULT_MAXIMUM_CACHED_FILE_AGE = ONE_WEEK;
+	public static final long DEFAULT_MAXIMUM_CACHED_FILE_AGE = ONE_YEAR * 10;
+
+    public static final long TILE_REQUEST_TIME_LIMIT =  5000; //milliseconds
 
 	public static final short TILE_DOWNLOAD_MAXIMUM_QUEUE_SIZE = 40;
 	public static final short TILE_FILESYSTEM_MAXIMUM_QUEUE_SIZE = 40;
@@ -123,10 +125,10 @@ public class OpenStreetMapTileProviderConstants {
 	public static final long TILE_EXPIRY_TIME_MILLISECONDS = 1000L * 60 * 60 * 24 * 30;
 
 	/** default is 600 Mb */
-	public static long TILE_MAX_CACHE_SIZE_BYTES = 600L * 1024 * 1024;
+	public static long TILE_MAX_CACHE_SIZE_BYTES = 1000L * 1024 * 1024;
 
 	/** default is 500 Mb */
-	public static long TILE_TRIM_CACHE_SIZE_BYTES = 500L * 1024 * 1024;
+	public static long TILE_TRIM_CACHE_SIZE_BYTES = 900L * 1024 * 1024;
 
      /** Change the root path of the osmdroid cache. 
      * By default, it is defined in SD card, osmdroid directory. 

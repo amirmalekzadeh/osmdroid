@@ -3,6 +3,7 @@ package org.osmdroid.tileprovider;
 
 import java.util.HashMap;
 
+import org.osmdroid.icon.IconProviderBase;
 import org.osmdroid.tileprovider.constants.OpenStreetMapTileProviderConstants;
 import org.osmdroid.tileprovider.modules.IFilesystemCache;
 import org.osmdroid.tileprovider.modules.MapTileModuleProviderBase;
@@ -39,12 +40,14 @@ import org.osmdroid.api.IMapView;
 public abstract class MapTileProviderBase implements IMapTileProviderCallback {
 
 
-	protected final MapTileCache mTileCache;
+	protected final MapTileCacheIterative mTileCache;
 	protected Handler mTileRequestCompleteHandler;
 	protected boolean mUseDataConnection = true;
 	protected Drawable mTileNotFoundImage = null;
 
 	private ITileSource mTileSource;
+	
+	private IconProviderBase mIconProvider;
 
 	/**
 	 * Attempts to get a Drawable that represents a {@link MapTile}. If the tile is not immediately
@@ -55,7 +58,11 @@ public abstract class MapTileProviderBase implements IMapTileProviderCallback {
 	 *
 	 * @see ReusableBitmapDrawable
 	 */
-	public abstract Drawable getMapTile(MapTile pTile);
+	public abstract Drawable getMapTile(MapTile pTile, IMapTileProviderCallback callback);
+	
+	public Drawable getMapTile(MapTile pTile) {
+		return getMapTile(pTile, this);
+	}
 
 	/**
 	 * classes that extend MapTileProviderBase must call this method to prevent memory leaks.
@@ -100,6 +107,18 @@ public abstract class MapTileProviderBase implements IMapTileProviderCallback {
 	 */
 	public void setTileSource(final ITileSource pTileSource) {
 		mTileSource = pTileSource;
+		if (mIconProvider != null) {
+			mIconProvider.setTileSource(pTileSource);
+		}
+		clearTileCache();
+	}
+	
+	public void setIconProvider(final IconProviderBase pIconProvider) {
+		mIconProvider = pIconProvider;
+		if (mTileSource != null) {
+			mIconProvider.setTileSource(mTileSource);			
+		}
+		mTileCache.setIconProvider(pIconProvider);
 		clearTileCache();
 	}
 
@@ -115,8 +134,8 @@ public abstract class MapTileProviderBase implements IMapTileProviderCallback {
 	/**
 	 * Creates a {@link MapTileCache} to be used to cache tiles in memory.
 	 */
-	public MapTileCache createTileCache() {
-		return new MapTileCache();
+	public MapTileCacheIterative createTileCache() {
+		return new MapTileCacheIterative();
 	}
 
 	public MapTileProviderBase(final ITileSource pTileSource) {
@@ -219,15 +238,47 @@ public abstract class MapTileProviderBase implements IMapTileProviderCallback {
 	protected void putTileIntoCache(MapTileRequestState pState, Drawable pDrawable) {
 		final MapTile tile = pState.getMapTile();
 		if (pDrawable != null) {
+//			if (mIconProvider != null)
+//				pDrawable = mIconProvider.renderTileIcons(tile, pDrawable);
 			mTileCache.putTile(tile, pDrawable);
 		}
 	}
+	
+	public static Drawable getBetterTile(Drawable a, Drawable b) {
+		if (a == null)
+			return b;
+		if (b == null)
+			return a;
+		if (! a.isStateful())
+			return a;
+		if (! b.isStateful())
+			return b;
+		if (ExpirableBitmapDrawable.getDrawableDiff(a) < ExpirableBitmapDrawable.getDrawableDiff(b))
+			return a;
+		if (ExpirableBitmapDrawable.getDrawableDiff(a) > ExpirableBitmapDrawable.getDrawableDiff(b))
+			return b;
+		if (ExpirableBitmapDrawable.isDrawableExpired(b))
+			return a;
+		return b;
+	}
 
 	protected void putExpiredTileIntoCache(MapTileRequestState pState, Drawable pDrawable) {
-		final MapTile tile = pState.getMapTile();
-		if (pDrawable != null && !mTileCache.containsTile(tile)) {
-			mTileCache.putTile(tile, pDrawable);
+		if (pDrawable == null) {
+			return;
 		}
+		
+		final MapTile tile = pState.getMapTile();
+		Drawable cacheTile = mTileCache.getMapTile(tile);
+
+		Drawable better = getBetterTile(pDrawable, cacheTile);
+
+		if (better != pDrawable && pDrawable instanceof ReusableBitmapDrawable)
+			BitmapPool.getInstance().returnDrawableToPool((ReusableBitmapDrawable) pDrawable);
+
+//		if (mIconProvider != null)
+//			better = mIconProvider.renderTileIcons(tile, better);
+
+		mTileCache.putTile(tile, better);
 	}
 
 	public void setTileRequestCompleteHandler(final Handler handler) {
@@ -303,7 +354,7 @@ public abstract class MapTileProviderBase implements IMapTileProviderCallback {
 		/** new (scaled) tiles to add to cache
 		  * NB first generate all and then put all in cache,
 		  * otherwise the ones we need will be pushed out */
-		protected final HashMap<MapTile, Bitmap> mNewTiles;
+		protected final HashMap<MapTile, ExpirableBitmapDrawable> mNewTiles;
 
 		protected final int mOldZoomLevel;
 		protected int mDiff;
@@ -314,7 +365,7 @@ public abstract class MapTileProviderBase implements IMapTileProviderCallback {
 
 		public ScaleTileLooper(final int pOldZoomLevel) {
 			mOldZoomLevel = pOldZoomLevel;
-			mNewTiles = new HashMap<MapTile, Bitmap>();
+			mNewTiles = new HashMap<MapTile, ExpirableBitmapDrawable>();
 			mSrcRect = new Rect();
 			mDestRect = new Rect();
 			mDebugPaint = new Paint();
@@ -348,9 +399,7 @@ public abstract class MapTileProviderBase implements IMapTileProviderCallback {
 			// now add the new ones, pushing out the old ones
 			while (!mNewTiles.isEmpty()) {
 				final MapTile tile = mNewTiles.keySet().iterator().next();
-				final Bitmap bitmap = mNewTiles.remove(tile);
-				final ExpirableBitmapDrawable drawable = new ReusableBitmapDrawable(bitmap);
-				ExpirableBitmapDrawable.setDrawableExpired(drawable);
+				final ExpirableBitmapDrawable drawable = mNewTiles.remove(tile);
 				final Drawable existingTile = mTileCache.getMapTile(tile);
 				if (existingTile == null || ExpirableBitmapDrawable.isDrawableExpired(existingTile))
 					putExpiredTileIntoCache(new MapTileRequestState(tile,
@@ -407,8 +456,13 @@ public abstract class MapTileProviderBase implements IMapTileProviderCallback {
 					if (isReusable)
 						reusableBitmapDrawable.finishUsingDrawable();
 				}
-				if (success)
-					mNewTiles.put(pTile, bitmap);
+				if (success) {
+					final ExpirableBitmapDrawable drawable = new ReusableBitmapDrawable(bitmap);
+					ExpirableBitmapDrawable.setDrawableExpired(drawable);
+					ExpirableBitmapDrawable.setDrawableDiff(drawable, mDiff);
+					ExpirableBitmapDrawable.setIconsRendered(drawable);
+					mNewTiles.put(pTile, drawable);
+				}
 			}
 		}
 	}
@@ -461,7 +515,11 @@ public abstract class MapTileProviderBase implements IMapTileProviderCallback {
 			}
 
 			if (bitmap != null) {
-				mNewTiles.put(pTile, bitmap);
+				final ExpirableBitmapDrawable drawable = new ReusableBitmapDrawable(bitmap);
+				ExpirableBitmapDrawable.setDrawableExpired(drawable);
+				ExpirableBitmapDrawable.setDrawableDiff(drawable, 10);
+				ExpirableBitmapDrawable.setIconsRendered(drawable);
+				mNewTiles.put(pTile, drawable);
 				if (OpenStreetMapTileProviderConstants.DEBUGMODE) {
 					Log.d(IMapView.LOGTAG,"Created scaled tile: " + pTile);
 					mDebugPaint.setTextSize(40);

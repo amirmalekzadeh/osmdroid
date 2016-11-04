@@ -151,6 +151,20 @@ public abstract class MapTileModuleProviderBase {
 			Log.w(IMapView.LOGTAG,"RejectedExecutionException", e);
 		}
 	}
+	
+	public Drawable loadMapTileSync(final MapTileRequestState pState) {
+		Runnable r = getTileLoader();
+		if (r instanceof TileLoader) {
+			TileLoader tileLoader = (TileLoader) r;
+			try {
+				return tileLoader.loadTile(pState);
+			} catch (CantContinueException e) {
+				e.printStackTrace();
+				return null;
+			}
+		}
+		return null;
+	}
 
 	private void clearQueue() {
 		synchronized (mQueueLockObject) {

@@ -10,6 +10,7 @@ import org.osmdroid.tileprovider.modules.MapTileDownloader;
 import org.osmdroid.tileprovider.modules.MapTileFileArchiveProvider;
 import org.osmdroid.tileprovider.modules.MapTileFilesystemProvider;
 import org.osmdroid.tileprovider.modules.MapTileSqlCacheProvider;
+import org.osmdroid.tileprovider.modules.MapTileFilesystemProviderIterative;
 import org.osmdroid.tileprovider.modules.NetworkAvailabliltyCheck;
 import org.osmdroid.tileprovider.modules.SqlTileWriter;
 import org.osmdroid.tileprovider.modules.TileWriter;
@@ -80,20 +81,16 @@ public class MapTileProviderBasic extends MapTileProviderArray implements IMapTi
 				pRegisterReceiver, pContext.getAssets(), pTileSource);
 		mTileProviderList.add(assetsProvider);
 
-		if (Build.VERSION.SDK_INT < 10) {
-			final MapTileFilesystemProvider fileSystemProvider = new MapTileFilesystemProvider(
-					pRegisterReceiver, pTileSource);
-			mTileProviderList.add(fileSystemProvider);
-		} else {
-			final MapTileSqlCacheProvider cachedProvider = new MapTileSqlCacheProvider(pRegisterReceiver, pTileSource);
-			mTileProviderList.add(cachedProvider);
-		}
+		final MapTileFilesystemProvider fileSystemProvider = new MapTileFilesystemProviderIterative(
+				pRegisterReceiver, pTileSource, this.mTileCache);
+		mTileProviderList.add(fileSystemProvider);
+
 		final MapTileFileArchiveProvider archiveProvider = new MapTileFileArchiveProvider(
 				pRegisterReceiver, pTileSource);
 		mTileProviderList.add(archiveProvider);
 
 		final MapTileDownloader downloaderProvider = new MapTileDownloader(pTileSource, tileWriter,
-				aNetworkAvailablityCheck);
+				aNetworkAvailablityCheck, this.mTileCache);
 		mTileProviderList.add(downloaderProvider);
 	}
 

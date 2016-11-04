@@ -7,6 +7,7 @@ import android.util.Log;
 import org.osmdroid.api.IMapView;
 import org.osmdroid.tileprovider.BitmapPool;
 import org.osmdroid.tileprovider.MapTile;
+import org.osmdroid.tileprovider.MapTileCache;
 import org.osmdroid.tileprovider.MapTileRequestState;
 import org.osmdroid.tileprovider.ReusableBitmapDrawable;
 import org.osmdroid.tileprovider.constants.OpenStreetMapTileProviderConstants;
@@ -56,6 +57,8 @@ public class MapTileDownloader extends MapTileModuleProviderBase {
 	private final AtomicReference<OnlineTileSourceBase> mTileSource = new AtomicReference<OnlineTileSourceBase>();
 
 	private final INetworkAvailablityCheck mNetworkAvailablityCheck;
+	
+	protected MapTileCache mTileCache;
 
 	// ===========================================================
 	// Constructors
@@ -79,10 +82,27 @@ public class MapTileDownloader extends MapTileModuleProviderBase {
 
 	public MapTileDownloader(final ITileSource pTileSource,
 			final IFilesystemCache pFilesystemCache,
+			final INetworkAvailablityCheck pNetworkAvailablityCheck, MapTileCache pTileCache) {
+		this(pTileSource, pFilesystemCache, pNetworkAvailablityCheck,
+				OpenStreetMapTileProviderConstants.getNumberOfTileDownloadThreads(),
+				OpenStreetMapTileProviderConstants.TILE_DOWNLOAD_MAXIMUM_QUEUE_SIZE, pTileCache);
+	}
+	
+	public MapTileDownloader(final ITileSource pTileSource,
+			final IFilesystemCache pFilesystemCache,
 			final INetworkAvailablityCheck pNetworkAvailablityCheck, int pThreadPoolSize,
 			int pPendingQueueSize) {
+		this(pTileSource, pFilesystemCache, pNetworkAvailablityCheck, pThreadPoolSize, pPendingQueueSize, null);
+	}
+
+	public MapTileDownloader(final ITileSource pTileSource,
+			final IFilesystemCache pFilesystemCache,
+			final INetworkAvailablityCheck pNetworkAvailablityCheck, int pThreadPoolSize,
+			int pPendingQueueSize, MapTileCache pTileCache) {
+		
 		super(pThreadPoolSize, pPendingQueueSize);
 
+		mTileCache = pTileCache;
 		mFilesystemCache = pFilesystemCache;
 		mNetworkAvailablityCheck = pNetworkAvailablityCheck;
 		setTileSource(pTileSource);
@@ -269,10 +289,14 @@ public class MapTileDownloader extends MapTileModuleProviderBase {
 			// don't return the tile because we'll wait for the fs provider to ask for it
 			// this prevent flickering when a load of delayed downloads complete for tiles
 			// that we might not even be interested in any more
-			pState.getCallback().mapTileRequestCompleted(pState, null);
-			// We want to return the Bitmap to the BitmapPool if applicable
-			if (pDrawable instanceof ReusableBitmapDrawable)
-				BitmapPool.getInstance().returnDrawableToPool((ReusableBitmapDrawable) pDrawable);
+			if (mTileCache.isTileNeeded(pState.getMapTile()))
+				pState.getCallback().mapTileRequestCompleted(pState, pDrawable);
+			else {
+				pState.getCallback().mapTileRequestCompleted(pState, null);
+				// We want to return the Bitmap to the BitmapPool if applicable
+				if (pDrawable instanceof ReusableBitmapDrawable)
+					BitmapPool.getInstance().returnDrawableToPool((ReusableBitmapDrawable) pDrawable);
+			}
 		}
 
 	}

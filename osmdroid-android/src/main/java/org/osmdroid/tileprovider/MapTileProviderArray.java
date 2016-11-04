@@ -90,8 +90,9 @@ public class MapTileProviderArray extends MapTileProviderBase {
 	}
 
 	@Override
-	public Drawable getMapTile(final MapTile pTile) {
-		final Drawable tile = mTileCache.getMapTile(pTile);
+	public Drawable getMapTile(final MapTile pTile, IMapTileProviderCallback callback) {
+		mTileCache.putRequest(pTile);
+		Drawable tile = mTileCache.getMapTileIterative(pTile, getTileSource().getTileSizePixels(), getTileSource().getMinimumZoomLevel());
 		if (tile != null && !ExpirableBitmapDrawable.isDrawableExpired(tile)) {
 			return tile;
 		} else {
@@ -111,7 +112,7 @@ public class MapTileProviderArray extends MapTileProviderBase {
 					final MapTileModuleProviderBase[] providerArray =
 						new MapTileModuleProviderBase[mTileProviderList.size()];
 					state = new MapTileRequestState(pTile,
-							mTileProviderList.toArray(providerArray), this);
+							mTileProviderList.toArray(providerArray), callback);
 				}
 
 				synchronized (mWorking) {
@@ -137,13 +138,12 @@ public class MapTileProviderArray extends MapTileProviderBase {
 
 	@Override
 	public void mapTileRequestCompleted(final MapTileRequestState aState, final Drawable aDrawable) {
+		super.mapTileRequestCompleted(aState, aDrawable);
 		synchronized (mWorking) {
 			mWorking.remove(aState.getMapTile());
 			// https://github.com/osmdroid/osmdroid/issues/272
 			mTileCache.putTile(aState.getMapTile(), aDrawable);
 		}
-
-		super.mapTileRequestCompleted(aState, aDrawable);
 	}
 
 	@Override
@@ -152,10 +152,10 @@ public class MapTileProviderArray extends MapTileProviderBase {
 		if (nextProvider != null) {
 			nextProvider.loadMapTileAsync(aState);
 		} else {
+			super.mapTileRequestFailed(aState);
 			synchronized (mWorking) {
 				mWorking.remove(aState.getMapTile());
 			}
-			super.mapTileRequestFailed(aState);
 		}
 	}
 
@@ -185,7 +185,7 @@ public class MapTileProviderArray extends MapTileProviderBase {
 	 * We want to not use a provider that doesn't exist anymore in the chain, and we want to not use
 	 * a provider that requires a data connection when one is not available.
 	 */
-	protected MapTileModuleProviderBase findNextAppropriateProvider(final MapTileRequestState aState) {
+	public MapTileModuleProviderBase findNextAppropriateProvider(final MapTileRequestState aState) {
 		MapTileModuleProviderBase provider = null;
 		boolean providerDoesntExist = false, providerCantGetDataConnection = false, providerCantServiceZoomlevel = false;
 		// The logic of the while statement is

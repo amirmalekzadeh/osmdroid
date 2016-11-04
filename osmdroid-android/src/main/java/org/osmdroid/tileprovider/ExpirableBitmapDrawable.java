@@ -10,6 +10,7 @@ import android.graphics.drawable.Drawable;
 public class ExpirableBitmapDrawable extends BitmapDrawable {
 
 	private static final int EXPIRED = -1;
+	private static final int ICONS_RENDERED = -3;
 
 	private int[] mState;
 
@@ -46,9 +47,39 @@ public class ExpirableBitmapDrawable extends BitmapDrawable {
 		}
 		return false;
 	}
-
+	
 	public static void setDrawableExpired(final Drawable pTile) {
-		pTile.setState(new int[]{ExpirableBitmapDrawable.EXPIRED});
+		if (drawableHasDiff(pTile))
+			pTile.setState(new int[]{ExpirableBitmapDrawable.EXPIRED, getDrawableDiff(pTile)});
+		else
+			pTile.setState(new int[]{ExpirableBitmapDrawable.EXPIRED});
+	}
+	
+	public static void setDrawableDiff(final Drawable pTile, final int diff) {
+		int exp = isDrawableExpired(pTile) ? EXPIRED : 0;
+		pTile.setState(new int[]{exp, diff});
+	}
+	
+	public static boolean drawableHasDiff(final Drawable pTile) {
+		return pTile.getState().length > 1;
+	}
+
+	public static int getDrawableDiff(final Drawable pTile) {
+		if (pTile.getState().length < 2)
+			return 0;
+		return pTile.getState()[1];
+	}
+
+	public static void setIconsRendered(final Drawable pTile) {
+		int exp = isDrawableExpired(pTile) ? EXPIRED : 0;
+		int diff = getDrawableDiff(pTile);
+		pTile.setState(new int[]{exp, diff, ICONS_RENDERED});
+	}
+		
+	public static boolean areIconsRendered(final Drawable pTile) {
+		if (pTile.getState().length < 3)
+			return false;
+		return pTile.getState()[2] == ICONS_RENDERED;
 	}
 
 }

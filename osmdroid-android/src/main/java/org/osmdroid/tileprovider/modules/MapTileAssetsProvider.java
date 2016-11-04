@@ -40,9 +40,9 @@ public class MapTileAssetsProvider extends MapTileFileStorageProviderBase {
 	// Fields
 	// ===========================================================
 
-	private final AssetManager mAssets;
+	protected final AssetManager mAssets;
 
-	private final AtomicReference<ITileSource> mTileSource = new AtomicReference<ITileSource>();
+	protected final AtomicReference<ITileSource> mTileSource = new AtomicReference<ITileSource>();
 
 	// ===========================================================
 	// Constructors
@@ -120,7 +120,7 @@ public class MapTileAssetsProvider extends MapTileFileStorageProviderBase {
 	// ===========================================================
 
 	protected class TileLoader extends MapTileModuleProviderBase.TileLoader {
-		private AssetManager mAssets = null;
+		protected AssetManager mAssets = null;
 
 		public TileLoader(AssetManager pAssets) {
 			mAssets = pAssets;

@@ -45,6 +45,11 @@ public final class TileSystem {
 	public static int getMaximumZoomLevel() {
 		return mMaxZoomLevel;
 	}
+	
+	public static int getMaximumZoomLevel(final int tileSize) {
+		int pow2 = (int) (Math.log(tileSize) / Math.log(2));
+		return (32 - 1) - pow2 - 1;
+	}
 
 	/**
 	 * Clips a number to the specified minimum and maximum values.
@@ -70,7 +75,11 @@ public final class TileSystem {
 	 */
 
 	public static int MapSize(final int levelOfDetail) {
-		return mTileSize << (levelOfDetail < getMaximumZoomLevel() ? levelOfDetail
+		return MapSize(levelOfDetail, mTileSize);
+	}
+
+	public static int MapSize(final int levelOfDetail, final int tileSize) {
+		return tileSize << (levelOfDetail < getMaximumZoomLevel(tileSize) ? levelOfDetail
 				: getMaximumZoomLevel());
 	}
 
@@ -122,6 +131,12 @@ public final class TileSystem {
 	 */
 	public static Point LatLongToPixelXY(double latitude, double longitude,
 			final int levelOfDetail, final Point reuse) {
+		return LatLongToPixelXY(latitude, longitude, levelOfDetail, reuse, mTileSize);
+	}
+
+	public static Point LatLongToPixelXY(double latitude, double longitude,
+			final int levelOfDetail, final Point reuse, final int tileSize) {
+
 		final Point out = (reuse == null ? new Point() : reuse);
 
 		latitude = Clip(latitude, MinLatitude, MaxLatitude);
@@ -131,7 +146,7 @@ public final class TileSystem {
 		final double sinLatitude = Math.sin(latitude * Math.PI / 180);
 		final double y = 0.5 - Math.log((1 + sinLatitude) / (1 - sinLatitude)) / (4 * Math.PI);
 
-		final int mapSize = MapSize(levelOfDetail);
+		final int mapSize = MapSize(levelOfDetail, tileSize);
 		out.x = (int) Clip(x * mapSize + 0.5, 0, mapSize - 1);
 		out.y = (int) Clip(y * mapSize + 0.5, 0, mapSize - 1);
 		return out;
@@ -153,9 +168,15 @@ public final class TileSystem {
 	 */
 	public static GeoPoint PixelXYToLatLong(final int pixelX, final int pixelY,
 			final int levelOfDetail, final GeoPoint reuse) {
+		return PixelXYToLatLong(pixelX, pixelY, levelOfDetail, reuse, mTileSize);
+	}
+
+	public static GeoPoint PixelXYToLatLong(final int pixelX, final int pixelY,
+			final int levelOfDetail, final GeoPoint reuse, final int tileSize) {
+
 		final GeoPoint out = (reuse == null ? new GeoPoint(0, 0) : reuse);
 
-		final double mapSize = MapSize(levelOfDetail);
+		final double mapSize = MapSize(levelOfDetail, tileSize);
 		final double x = (Clip(pixelX, 0, mapSize - 1) / mapSize) - 0.5;
 		final double y = 0.5 - (Clip(pixelY, 0, mapSize - 1) / mapSize);
 
@@ -200,10 +221,14 @@ public final class TileSystem {
 	 * @return Output parameter receiving the pixel X and Y coordinates
 	 */
 	public static Point TileXYToPixelXY(final int tileX, final int tileY, final Point reuse) {
+		return TileXYToPixelXY(tileX, tileY, reuse, mTileSize);
+	}
+
+	public static Point TileXYToPixelXY(final int tileX, final int tileY, final Point reuse, int tileSize) {
 		final Point out = (reuse == null ? new Point() : reuse);
 
-		out.x = tileX * mTileSize;
-		out.y = tileY * mTileSize;
+		out.x = tileX * tileSize;
+		out.y = tileY * tileSize;
 		return out;
 	}
 

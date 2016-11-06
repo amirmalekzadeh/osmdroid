@@ -8,7 +8,6 @@ import org.osmdroid.tileprovider.modules.MapTileAssetsProvider;
 import org.osmdroid.tileprovider.modules.MapTileDownloader;
 import org.osmdroid.tileprovider.modules.MapTileFileArchiveProvider;
 import org.osmdroid.tileprovider.modules.MapTileFilesystemProvider;
-import org.osmdroid.tileprovider.modules.MapTileSqlCacheProvider;
 import org.osmdroid.tileprovider.modules.MapTileFilesystemProviderIterative;
 import org.osmdroid.tileprovider.modules.NetworkAvailabliltyCheck;
 import org.osmdroid.tileprovider.modules.SqlTileWriter;

@@ -81,7 +81,7 @@ public class MapTileFilesystemProviderIterative extends MapTileFilesystemProvide
 			final MapTile pTile = pState.getMapTile();
 
 			// if there's no sdcard then don't do anything
-			if (!isSdCardAvailable()) {
+			if (!getSdCardAvailable()) {
 				return null;
 			}
 			

@@ -73,7 +73,7 @@ public class MapTileFileArchiveProviderIterative extends MapTileFileArchiveProvi
 
 			final MapTile pTile = pState.getMapTile();
 
-			if (!isSdCardAvailable()) {
+			if (!getSdCardAvailable()) {
 				return null;
 			}
 			

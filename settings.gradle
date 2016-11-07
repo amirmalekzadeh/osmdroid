@@ -2,11 +2,11 @@ rootProject.name = 'osmdroid-parent'
 
 //libraries
 include ':osmdroid-android'
-include ':osmdroid-third-party'
-include ':osmdroid-mapsforge'
+//include ':osmdroid-third-party'
+//include ':osmdroid-mapsforge'
 
 //sample apps
-include ':OpenStreetMapViewer'
-include ':OSMMapTilePackager'
-include ':GoogleWrapperSample'
-include ':osmdroid-forge-app'
+//include ':OpenStreetMapViewer'
+//include ':OSMMapTilePackager'
+//include ':GoogleWrapperSample'
+//include ':osmdroid-forge-app'
